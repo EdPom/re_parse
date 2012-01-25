@@ -1,0 +1,47 @@
+How to find the operator for a operator like '+'?
+
+Scenario: I found a '+' at position 7.
+
+Case 1:
+    Single parentheses
+    (.....)+
+    01234567
+Case 2:
+    Multiple parentheses
+    (.(..))+
+    01234567
+
+    This is the general case
+    Rule:
+     (1) Count the last right parentheses (RP) as 1
+     (2) Count the last left parentheses (RP) as -1
+     (3) Count from the parentheses before the
+         operator
+     (4) From the point we count to 0, up to the point
+         before the operator is the operand.
+    
+    so in this case:
+    (.(..))+  Count = -1
+          ^
+    (.(..))+  Count = -2
+         ^
+    (.(..))+  Count = -2
+        ^    
+    (.(..))+  Count = -2
+       ^
+    (.(..))+  Count = -1
+      ^
+    (.(..))+  Count = -1
+     ^
+    (.(..))+  Count = 0 ---> From this point to the
+    ^                        last operand before '+'
+    |<--->|                  is the operand of '+'
+
+Case 3:
+    No parentheses
+    .......+
+    01234567
+
+    Use the rule above, the operand would be the operand
+    at position 6, since we count to 0 there (even we did
+    not count at all).

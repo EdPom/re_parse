@@ -1,0 +1,32 @@
+When to add concatenation?
+
+if in the bracket
+    nothing to do
+
+if this character is
+
+    chars
+    and the last is
+        CLOSURE
+        AT_LEAST_ONE
+        chars
+        digit
+        letter
+        right parentheses
+        right bracket
+
+    left parentheses
+    left bracket
+    and the last is
+        CLOSURE
+        AT_LEAST_ONE
+        chars
+        digit
+        letter
+        right parentheses
+        right bracket
+
+    right parentheses
+    right bracket
+        do nothing
+    
