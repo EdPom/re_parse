@@ -13,10 +13,10 @@ For now, this parser only accepts a regular expression that contains the basic
 operators:
 
 * Concatenation
-* Alternation -- '|'
-* Closure -- '*'
-* One or more -- '+'
-* Zero or one -- '?'
+* Alternation -- `|`
+* Closure -- `*`
+* One or more -- `+`
+* Zero or one -- `?`
 
 Any other operators are not yet implemented.
 
@@ -30,14 +30,14 @@ This part explains the procedure of the parser.
 
 The regular expression (RE) that the parser gets is in the format of strings,
 so the first thing it does is to determine what each character means in the
-regular expression. For example, '[' means the beginning of an alternation 
+regular expression. For example, `[` means the beginning of an alternation 
 block (alternation of all the characters inside between it and a right bracket
-). But if there is a escaping character ('\') before the bracket, then 
-together, '\[' means the bracket character.
+). But if there is a escaping character (`\`) before the bracket, then 
+together, `\[` means the bracket character.
 
 Letters and digits can be recognized easily.
 
-Noted characters and operators are stored in a list of '(Type, Value)' pair.
+Noted characters and operators are stored in a list of `(Type, Value)` pair.
 
 
 ### Adding missing concatenations and alternations
@@ -45,13 +45,13 @@ Noted characters and operators are stored in a list of '(Type, Value)' pair.
 By default, concatenations are not directly shown in the RE. To make things
 easy (or more complicated?), I want then to be included. 
 Concatenations are added before a character when the character is a "normal 
-character" ('a', '1', '\n', etc.) or a left bracket or parenthese ('[', '(') 
+character" (`a`, `1`, `\n`, etc.) or a left bracket or parenthese (`[`, `(`) 
 and the character before it is a
 
-* Closure -- '*'
-* One or more -- '+'
-* Normal character -- 'a', '1', '\n', etc.
-* Right bracket or parenthese -- ']', ')'
+* Closure -- `*`
+* One or more -- `+`
+* Normal character -- `a`, `1`, `\n`, etc.
+* Right bracket or parenthese -- `]`, `)`
 
 Unlike concatenation, alternations are specified in the RE already (if it is a
 valid RE), so all the parser does for alternation is to transform the bracket
