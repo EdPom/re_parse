@@ -7,6 +7,11 @@ from rule import CheckCharType
 from rule import CheckConcatenation
 from rule import ConvertDashExpression
 from rule import IsValidDashOperand
+from rule import CheckIsOp
+from rule import CheckIsChar
+from rule import CheckPrecedenceHigherThan
+from rule import CheckPrecedenceLessThan
+from rule import CheckIsOneOprandOp
 
 class Node:
     """This class defines a node in the tree that
@@ -268,7 +273,22 @@ class Parser:
                 else:
                 	idx += 1
             return LastRE[:]
-            # pass
+        
+        def CheckPrec(Type, Level, TempStack):
+            print Type,
+
+            try:
+                print TempStack[-1][0],
+                PrecHigherThan = CheckPrecedenceHigherThan(Type, TempStack[-1][0])
+                PrecLessThan = CheckPrecedenceLessThan(Type, TempStack[-1][0])
+                SameLevel = Level == TempStack[-1][2]
+            except IndexError:
+                print 'None',
+                PrecHigherThan = CheckPrecedenceHigherThan(Type, None)
+                PrecLessThan = CheckPrecedenceLessThan(Type, None)
+                SameLevel = False
+            
+            return PrecHigherThan, PrecLessThan, SameLevel
 
         self.FA = FiniteAutomata()
         # should check if NotedRE exist
@@ -278,9 +298,79 @@ class Parser:
         self.NotedRE = AddConcatToNotedRE(self.NotedRE)
         self.NotedRE = AddAlterToNotedRE(self.NotedRE)
         self.NotedRE = ConvertToSimpleRE(self.NotedRE)
+        Stack = list()
+        TempStack = list()
+        Level = 0
         for Type, Value in self.NotedRE:
-            print Type, Value
-            # pass
+            if CheckIsChar(Type):
+                # Chars are put into the stack directly
+                Stack.append((Type, Value, Level))
+            elif Type == 'LEFT_PARENTHESES':
+                # Enter the next level
+                Level += 1
+            elif Type == 'RIGHT_PARENTHESES':
+                # all operator has to be put into the stack before we leave
+                # this level
+                if len(TempStack) > 0:
+                    if TempStack[-1][2] == Level:
+                        while True:
+                            Stack.append(TempStack.pop())
+                            if len(TempStack) == 0:
+                                break
+                            elif TempStack[-1][2] != Level:
+                                break
+
+                Level -= 1
+            elif CheckIsOp(Type):
+                
+                while True:
+                    PrecHigherThan, PrecLessThan, SameLevel = CheckPrec(Type, Level, TempStack)
+                    
+                    # operators like closure should be put into stack directly
+                    # since they are associated with one operand only, so we don't
+                    # have to consider their precedence
+                    if CheckIsOneOprandOp(Type):
+                        Stack.append((Type, Value, Level))
+                        break
+
+                    # otherwise, we can push the previous operator in the stack, but
+                    # still can't push the current operator into the stack
+                    elif PrecHigherThan and SameLevel:
+                        print '>'
+                        # Stack.append(TempStack.pop())
+                        TempStack.append((Type, Value, Level))
+                        break
+                    
+                    elif PrecLessThan and SameLevel:
+                        print '<'
+                        Stack.append(TempStack.pop())
+                    
+                    elif not PrecLessThan and not PrecHigherThan and SameLevel:
+                        print '='
+                        Stack.append(TempStack.pop())
+                        TempStack.append((Type, Value, Level))
+                        break
+                    
+                    # if the current operator has higher precedence than the one in
+                    # the previous one, than we can't put the operator in the stack
+                    # yet since the other operator has not shown up
+                    else:
+                        print '!'
+                        TempStack.append((Type, Value, Level))
+                        break
+
+            else:
+                # Error!
+                print 'ERROR: unknown char type.'
+        
+        if len(TempStack) > 0:
+            TempStack.reverse()
+            Stack.extend(TempStack)
+        
+        for Type, Value, Level in Stack:
+            # print Type, Value
+            print Value,
+
 
     
     def NFAtoDFA(self, ):
@@ -302,7 +392,8 @@ class Parser:
 
 if __name__ == '__main__':
     # re = '\\[\\*nad[b-eACD-]+[4-1]'
-    re = '(a(aa))+'
+    re = '(ab*|ba)*a'
+    # re = 'aba|cdc|efe|ghg'
     parser = Parser(re)
     # print ConvertDashExpression('7', '1')
     
