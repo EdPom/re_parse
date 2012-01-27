@@ -14,6 +14,10 @@ OPERATOR = dict({'|' : 'ALTERNATION',
                  '(' : 'LEFT_PARENTHESES',
                  ')' : 'RIGHT_PARENTHESES'})
 
+# precedence of basic operators: the operator with smaller
+# index has higher precedence.
+PRECEDENCE = ['CLOSURE', 'CONCATENATION', 'ALTERNATION', None]
+
 DIGIT = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 LETTER_LOWER = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 
@@ -80,11 +84,77 @@ def CheckCharType(char):
         # Not Found
         return None, None
 
+def CheckIsOp(Type):
+    if Type == 'ALTERNATION' or Type == 'CONCATENATION' or Type == 'CLOSURE':
+        return True
+    elif Type == 'LEFT_PARENTHESES' or Type == 'RIGHT_PARENTHESES':
+        return False
+    else:
+        return False
+
+def CheckIsChar(Type):
+    """Return Boolean value which indicates whether the
+    character given is an operator."""
+
+    if Type == 'ALTERNATION' or Type == 'CONCATENATION' or Type == 'CLOSURE':
+        return False
+    elif Type == 'LEFT_PARENTHESES' or Type == 'RIGHT_PARENTHESES':
+        return False
+    else:
+        return True
+
+def CheckIsOneOprandOp(Type):
+    if Type == 'CLOSURE' or Type == 'AT_LEAST_ONE':
+        return True
+    else:
+        return False
+
 def __TestCheckCharType():
     print '\\+ is', CheckCharType('\\+')
     print 'n is', CheckCharType('n')
     print '0 is', CheckCharType('0')
     print '+ is', CheckCharType('+')
+
+def CheckPrecedenceHigherThan(OP1, OP2):
+    """This function compares the precedence of the two
+    given operators, if the first operator has higher
+    precedence it returns true. It returns false
+    otherwise."""
+
+    if OP1 not in PRECEDENCE or OP2 not in PRECEDENCE:
+        # should report error here
+        print 'TYPE ERROR: only basic operators are',
+        print 'allowed in CheckPrecedenceHigherThan'
+        exit()
+    
+    if PRECEDENCE.index(OP1) < PRECEDENCE.index(OP2):
+        return True
+    
+    return False
+
+def CheckPrecedenceLessThan(OP1, OP2):
+    """This function compares the precedence of the two
+    given operators, if the first operator has higher
+    precedence it returns true. It returns false
+    otherwise."""
+
+    if OP1 not in PRECEDENCE or OP2 not in PRECEDENCE:
+        # should report error here
+        print 'TYPE ERROR: only basic operators are',
+        print 'allowed in CheckPrecedenceHigherThan'
+        exit()
+    
+    if PRECEDENCE.index(OP1) > PRECEDENCE.index(OP2):
+        return True
+    
+    return False
+
+def __TestCheckPrecedenceHigherThan():
+    # True
+    for OP1 in PRECEDENCE:
+        for OP2 in PRECEDENCE:
+            print OP1, 'has higher precedence than', OP2, ':',
+            print CheckPrecedenceHigherThan(OP1, OP2)
 
 def CheckConcatenation(ThisType, LastType, IsInBracket):
     """check if an concatenation should be added between
@@ -185,4 +255,5 @@ if __name__ == '__main__':
     # __FindDuplicate(CHARACTER)
     # __TestCheckCharType()
     # __TestIsValidDashMember()
-    __TestConvertDashExpression()
+    # __TestConvertDashExpression()
+    __TestCheckPrecedenceHigherThan()
