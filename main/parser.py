@@ -251,15 +251,15 @@ class Parser:
             return LastRE[:]
         
         def CheckPrec(Type, Level, TempStack):
-            print Type,
+            # print Type,
 
             try:
-                print TempStack[-1][0],
+                # print TempStack[-1][0],
                 PrecHigherThan = CheckPrecedenceHigherThan(Type, TempStack[-1][0])
                 PrecLessThan = CheckPrecedenceLessThan(Type, TempStack[-1][0])
                 SameLevel = Level == TempStack[-1][2]
             except IndexError:
-                print 'None',
+                # print 'None',
                 PrecHigherThan = CheckPrecedenceHigherThan(Type, None)
                 PrecLessThan = CheckPrecedenceLessThan(Type, None)
                 SameLevel = False
@@ -292,9 +292,7 @@ class Parser:
                     if TempStack[-1][2] == Level:
                         while True:
                             Stack.append(TempStack.pop())
-                            if len(TempStack) == 0:
-                                break
-                            elif TempStack[-1][2] != Level:
+                            if len(TempStack) == 0 or TempStack[-1][2] != Level:
                                 break
 
                 Level -= 1
@@ -313,17 +311,17 @@ class Parser:
                     # otherwise, we can push the previous operator in the stack, but
                     # still can't push the current operator into the stack
                     elif PrecHigherThan and SameLevel:
-                        print '>'
+                        # print '>'
                         # Stack.append(TempStack.pop())
                         TempStack.append((Type, Value, Level))
                         break
                     
                     elif PrecLessThan and SameLevel:
-                        print '<'
+                        # print '<'
                         Stack.append(TempStack.pop())
                     
                     elif not PrecLessThan and not PrecHigherThan and SameLevel:
-                        print '='
+                        # print '='
                         Stack.append(TempStack.pop())
                         TempStack.append((Type, Value, Level))
                         break
@@ -332,7 +330,7 @@ class Parser:
                     # the previous one, than we can't put the operator in the stack
                     # yet since the other operator has not shown up
                     else:
-                        print '!'
+                        # print '!'
                         TempStack.append((Type, Value, Level))
                         break
 
@@ -349,9 +347,38 @@ class Parser:
         # for Type, Value, Level in Stack:
         #     print Value,
 
-        self.FA = FiniteAutomata()
+        self.FAStack = list()
+        self.FACounter = 0
 
+        for Type, Value, Level in Stack:
+            if CheckIsOp(Type):
+                if Type == 'CLOSURE':
+                    fa = self.FAStack.pop()
+                    fa.CreateClosure()
+                    self.FAStack.append(fa)
+                elif Type == 'CONCATENATION':
+                    fa = self.FAStack.pop()
+                    fa.CreateConcatenation(self.FAStack.pop())
+                    self.FAStack.append(fa)
+                elif Type == 'ALTERNATION':
+                    fa = self.FAStack.pop()
+                    fa.CreateAlternation(self.FAStack.pop())
+                    self.FAStack.append(fa)
+                else:
+                    pass
+            else:
+                # It's a char. create a NFA for this char
+                fa = FiniteAutomata(self.FACounter, Value)
+                self.FAStack.append(fa)
+        
+        if len(self.FAStack) != 1:
+            print 'More than one FA left in the stack!'
+            pass
+        
+        self.NFA = self.FAStack.pop()
+        self.NFA.Print()
 
+        # return fa
     
     def NFAtoDFA(self, ):
         """This function transforms a NFA to deterministic

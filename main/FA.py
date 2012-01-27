@@ -54,13 +54,21 @@ class State:
 class FiniteAutomata:
     """Representation of the Finite Automata."""
     
-    def __init__(self, ID):
+    def __init__(self, ID, char):
+        """create a NFA for single character transition."""
         self.States = list()
         self.StateCounter = 0
         self.TransitionMap = dict()
         self.StartState = list()
         self.AcceptState = list()
         self.ID = ID
+
+        # Create an FA for this character
+        s1 = self.AddState()
+        s2 = self.AddState()
+        self.AddTransition(s1, s2, char)
+        self.SetAcceptState(s2)
+        self.SetStartState(s1)
 
     # def FindStateByID(self, ID):
     #     # print "ID =", ID
@@ -105,6 +113,96 @@ class FiniteAutomata:
         self.States[srcpos].SetTransition(char, dest)
         return True
     
+    def CreateClosure(self):
+        """create the NFA of closure of the current FA"""
+
+        if len(self.StartState) != 1:
+            print "ERROR: More than one start state."
+            exit()
+        if len(self.AcceptState) != 1:
+            print "WARNING: More than one accepting state."
+            exit()
+
+        NewStart = self.AddState()
+        NewEnd = self.AddState()
+        OldStart = self.StartState.pop()
+        OldEnd = self.AcceptState.pop()
+
+        # 4 new transitions:
+        # 
+        #           (new)
+        #         +------+
+        #         |      |
+        #   (new) |      v (new)
+        # (1) -> (2) -> (3) -> (4)
+        #  |                    ^
+        #  |                    |
+        #  +--------------------+
+        #           (new)
+        
+        self.AddTransition(NewStart, OldStart, 'EPSILON')
+        self.AddTransition(OldEnd, NewEnd, 'EPSILON')
+        self.AddTransition(OldEnd, OldStart, 'EPSILON')
+        self.AddTransition(NewStart, NewEnd, 'EPSILON')
+
+        self.StartState.append(NewStart)
+        self.AcceptState.append(NewEnd)
+    
+    def CreateConcatenation(self, fa2):
+        if len(self.StartState) != 1 or len(fa2.StartState) != 1:
+            print "ERROR: More than one start state."
+            exit()
+        if len(self.AcceptState) != 1 or len(fa2.AcceptState) != 1:
+            print "WARNING: More than one accepting state."
+            exit()
+        
+        # transfer all states of fa2 into fa1
+        self.States.extend(fa2.States)
+
+        # NewStart = self.AddState()
+        # NewEnd = self.AddState()
+        OldStart = self.StartState.pop()
+        OldEnd = self.AcceptState.pop()
+        OldStart2 = fa2.StartState.pop()
+        OldEnd2 = fa2.AcceptState.pop()
+
+        # 1 new transition:
+        # end of fa1 -> start of fa2
+        self.AddTransition(OldEnd, OldStart2, 'EPSILON')
+
+        self.StartState.append(OldStart)
+        self.AcceptState.append(OldEnd2)
+    
+    def CreateAlternation(self, fa2):
+        if len(self.StartState) != 1 or len(fa2.StartState) != 1:
+            print "ERROR: More than one start state."
+            exit()
+        if len(self.AcceptState) != 1 or len(fa2.AcceptState) != 1:
+            print "WARNING: More than one accepting state."
+            exit()
+        
+        # transfer all states of fa2 into fa1
+        self.States.extend(fa2.States)
+
+        NewStart = self.AddState()
+        NewEnd = self.AddState()
+        OldStart = self.StartState.pop()
+        OldEnd = self.AcceptState.pop()
+        OldStart2 = fa2.StartState.pop()
+        OldEnd2 = fa2.AcceptState.pop()
+
+        # 4 new transition:
+        # new start -> 2 old starts
+        # 2 old ends -> new end
+        self.AddTransition(NewStart, OldStart, 'EPSILON')
+        self.AddTransition(NewStart, OldStart2, 'EPSILON')
+        self.AddTransition(OldEnd, NewEnd, 'EPSILON')
+        self.AddTransition(OldEnd2, NewEnd, 'EPSILON')
+
+        self.StartState.append(OldStart)
+        self.AcceptState.append(OldEnd2)
+
+    
     def SetAcceptState(self, ID):
         self.AcceptState.append(ID)
     
@@ -116,6 +214,10 @@ class FiniteAutomata:
 
     def GetStartState(self):
         return self.StartState[:]
+
+    def Print(self):
+        for state in self.States:
+            state.Print()
 
     # def GetStates(self):
     #     return self.States[:]
@@ -139,9 +241,12 @@ class FiniteAutomataManager:
     
 if __name__ == '__main__':
 
-    fa = FiniteAutomata(0)
-    s1 = fa.AddState()
-    s2 = fa.AddState()
-    fa.AddTransition(s1, s2, 'a')
-    fa.SetAcceptState(s2)
-    fa.SetStartState(s1)
+    fa = FiniteAutomata(0, 'a')
+    fa2 = FiniteAutomata(1, 'b')
+    fa.CreateAlternation(fa2)
+    # s1 = fa.AddState()
+    # s2 = fa.AddState()
+    # fa.AddTransition(s1, s2, 'a')
+    # fa.SetAcceptState(s2)
+    # fa.SetStartState(s1)
+    fa.Print()
