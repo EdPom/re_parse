@@ -18,7 +18,7 @@ class State:
         # dictionary. The key being the condiion (a
         # character) and the value being the ID of 
         # destination state.
-        CheckID(ID)
+        # CheckID(ID)
         
         self.TransitionMap = dict()
         self.ID = ID
@@ -29,11 +29,12 @@ class State:
         character) and the destination of the transition
         (the ID of the destination state)."""
         # Question: how do I check if DestID is valid?
-        CheckID(DestID)
+        # CheckID(DestID)
         
-        try:
-            self.TransitionMap[key]
-        except KeyError:
+        # try:
+        #     self.TransitionMap[key]
+        # except KeyError:
+        if key not in self.TransitionMap:
             self.TransitionMap[key] = list()
         
         if DestID not in self.TransitionMap[key]:
@@ -53,68 +54,94 @@ class State:
 class FiniteAutomata:
     """Representation of the Finite Automata."""
     
-    def __init__(self):
+    def __init__(self, ID):
         self.States = list()
+        self.StateCounter = 0
+        self.TransitionMap = dict()
         self.StartState = list()
         self.AcceptState = list()
+        self.ID = ID
 
-    def FindStateByID(self, ID):
-        # print "ID =", ID
-        # val = list()
-        # for state in self.States:
-        #     if state.ID == ID:
-        #         val.append(state)
-        # return val
-        return [state for state in self.States if state.ID == ID]
+    # def FindStateByID(self, ID):
+    #     # print "ID =", ID
+    #     # val = list()
+    #     # for state in self.States:
+    #     #     if state.ID == ID:
+    #     #         val.append(state)
+    #     # return val
+    #     return [state for state in self.States if state.ID == ID]
     
-    def AddState(self, state):
+    def AddState(self):
         # There shouldn't be a state with the same ID
-        if len(self.FindStateByID(state.ID)) is not 0:
-            print "State with the same ID already exist."
+        # if len(self.FindStateByID(state.ID)) is not 0:
+        #     print "State with the same ID already exist."
+        StateID = str(self.ID) + '_' + str(self.StateCounter)
+        state = State(StateID)
         self.States.append(state)
-        # Place states in the order of their ID
-        sorted(self.States, key=lambda state: state.ID)
+        # # Place states in the order of their ID
+        sorted(self.States, key=lambda stateID: stateID)
+
+        self.StateCounter += 1
+        return StateID
+
+    def FindStatePosByID(self, ID):
+        for idx, state in enumerate(self.States):
+            if state.ID == ID:
+                return idx
+        return -1
+    
+    def AddTransition(self, src, dest, char):
+        """set transition on given character for a state."""
+        srcpos = self.FindStatePosByID(src)
+        destpos = self.FindStatePosByID(dest)
+
+        if srcpos < 0 or destpos < 0:
+            # print "ERROR: State ID out of bound."
+            return False
+
+        # key = str(self.ID) + '_' + str(src)
+        # self.TransitionMap[key] = str(self.ID) + '_' + str(dest)
+
+        self.States[srcpos].SetTransition(char, dest)
+        return True
     
     def SetAcceptState(self, ID):
-        """Add the state with its id being ID to
-        accepting states"""
-        CheckID(ID)
         self.AcceptState.append(ID)
     
+    def GetAcceptState(self):
+        return self.AcceptState[:]
+    
     def SetStartState(self, ID):
-        """Set the state with id being ID to be the start
-        state"""
-        CheckID(ID)
         self.StartState.append(ID)
 
-    def GetStates(self):
-        # return [state for state in self.States]
-        return self.States[:]
+    def GetStartState(self):
+        return self.StartState[:]
+
+    # def GetStates(self):
+    #     return self.States[:]
+
+class FiniteAutomataManager:
+
+    def __init__(self):
+        self.FACounter = 0
+        self.FAs = list()
+    
+    def CreateFA(char):
+        fa = FiniteAutomata(self.FACounter)
+        s1 = fa.AddState()
+        s2 = fa.AddState()
+        fa.AddTransition(s1, s2, char)
+        fa.SetAcceptState(s2)
+        fa.SetStartState(s1)
+        self.FACounter += 1
+
+        return fa
     
 if __name__ == '__main__':
-    # State 1 should have two conditions: on encountering
-    # character 'a', there should be transition to state
-    # 2 and 3, on encountering 'b', there should be a
-    # transition to state 3.
-    state = State(1)
-    state.SetTransition('a', 2)
-    # a redundent operation
-    state.SetTransition('a', 2)
-    state.SetTransition('a', 3)
-    state.SetTransition('b', 3)
-    # state.Print()
 
-    fa = FiniteAutomata()
-    fa.AddState(state)
-    fa.AddState(State(2))
-    fa.SetAcceptState(2)
-    fa.SetStartState(1)
-    # for state in fa.FindStateByID(3):
-    #     state.Print()
-    # print fa.GetStates()
-
-    # This should raise an exception of type error
-    # State('a')
-
-    # This should raise an exception of value error
-    # State(-1)
+    fa = FiniteAutomata(0)
+    s1 = fa.AddState()
+    s2 = fa.AddState()
+    fa.AddTransition(s1, s2, 'a')
+    fa.SetAcceptState(s2)
+    fa.SetStartState(s1)
