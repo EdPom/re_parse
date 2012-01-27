@@ -13,30 +13,6 @@ from rule import CheckPrecedenceHigherThan
 from rule import CheckPrecedenceLessThan
 from rule import CheckIsOneOprandOp
 
-class Node:
-    """This class defines a node in the tree that
-    represent the structure of a given regular
-    expression"""
-
-    def __init__(self, Type, Value):
-        """This function initialized a node. The type
-        represent type of a given ndoe (digit, letter,
-        operator, etc.) and the value specifies the
-        exact value ('1', 'a', concatenation, etc.)"""
-        self.Type = Type
-        self.Value = Value
-        self.LeftChild = None
-        self.RightChild = None
-    
-    def SetLeftChild(self, node):
-        """Left Child is always the left operand of a
-        operation."""
-        self.LeftChild = node
-    
-    def SetRightChild(self, node):
-        """This function sets the right operand of the
-        node."""
-        self.RightChild = node
 
 class Parser:
     """This is the parser class. It implements the main
@@ -289,8 +265,9 @@ class Parser:
                 SameLevel = False
             
             return PrecHigherThan, PrecLessThan, SameLevel
+        
+        # REtoNFA finally starts here...
 
-        self.FA = FiniteAutomata()
         # should check if NotedRE exist
         if len(self.NotedRE) == 0:
             return
@@ -367,9 +344,12 @@ class Parser:
             TempStack.reverse()
             Stack.extend(TempStack)
         
-        for Type, Value, Level in Stack:
-            # print Type, Value
-            print Value,
+        # At this moment, RE has already been transformed to stacks!
+        
+        # for Type, Value, Level in Stack:
+        #     print Value,
+
+        self.FA = FiniteAutomata()
 
 
     
