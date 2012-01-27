@@ -65,7 +65,8 @@ CHARACTER = dict({
             "\\*" : '*',
             "\\|" : '|',
             "\\(" : '(',
-            "\\)" : ')'})
+            "\\)" : ')',
+            "EPSILON" : "EPSILON"})
 
 def CheckCharType(char):
     """Find out what kind of character is this."""
