@@ -262,8 +262,9 @@ def __FindDuplicate(List):
             print 'Duplicate! ('+char+')'
 
 if __name__ == '__main__':
+    __FindDuplicate(ForAllChar())
     # __FindDuplicate(CHARACTER)
     # __TestCheckCharType()
     # __TestIsValidDashMember()
     # __TestConvertDashExpression()
-    __TestCheckPrecedenceHigherThan()
+    # __TestCheckPrecedenceHigherThan()
