@@ -68,6 +68,11 @@ CHARACTER = dict({
             "\\)" : ')',
             "EPSILON" : "EPSILON"})
 
+def ForAllChar():
+    # Should not include EPSILON!
+    # return DIGIT + LETTER_LOWER + LETTER_UPPER + CHARACTER.values()
+    return ['a', 'b']
+
 def CheckCharType(char):
     """Find out what kind of character is this."""
     # char should be a character
