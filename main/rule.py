@@ -80,8 +80,8 @@ def ForAllChar():
 def CheckCharType(char):
     """Find out what kind of character is this."""
     # char should be a character
-    if len(char) > 2:
-        return None
+    # if len(char) > 2:
+    #     return None
     if char in OPERATOR:
         return OPERATOR[char], char
     elif char in DIGIT:
@@ -119,11 +119,11 @@ def CheckIsOneOprandOp(Type):
     else:
         return False
 
-def __TestCheckCharType():
-    print '\\+ is', CheckCharType('\\+')
-    print 'n is', CheckCharType('n')
-    print '0 is', CheckCharType('0')
-    print '+ is', CheckCharType('+')
+# def __TestCheckCharType():
+#     print '\\+ is', CheckCharType('\\+')
+#     print 'n is', CheckCharType('n')
+#     print '0 is', CheckCharType('0')
+#     print '+ is', CheckCharType('+')
 
 def CheckPrecedenceHigherThan(OP1, OP2):
     """This function compares the precedence of the two
@@ -159,12 +159,12 @@ def CheckPrecedenceLessThan(OP1, OP2):
     
     return False
 
-def __TestCheckPrecedenceHigherThan():
-    # True
-    for OP1 in PRECEDENCE:
-        for OP2 in PRECEDENCE:
-            print OP1, 'has higher precedence than', OP2, ':',
-            print CheckPrecedenceHigherThan(OP1, OP2)
+# def __TestCheckPrecedenceHigherThan():
+#     # True
+#     for OP1 in PRECEDENCE:
+#         for OP2 in PRECEDENCE:
+#             print OP1, 'has higher precedence than', OP2, ':',
+#             print CheckPrecedenceHigherThan(OP1, OP2)
 
 def CheckConcatenation(ThisType, LastType, IsInBracket):
     """check if an concatenation should be added between
@@ -199,61 +199,56 @@ def IsValidDashOperand(Char):
         Val = False
     return Val
 
-def __TestIsValidDashMember():
-    print IsValidDashOperand('a')
-    print IsValidDashOperand('A')
-    print IsValidDashOperand('8')
-    print IsValidDashOperand('[')
+# def __TestIsValidDashMember():
+#     print IsValidDashOperand('a')
+#     print IsValidDashOperand('A')
+#     print IsValidDashOperand('8')
+#     print IsValidDashOperand('[')
 
 def ConvertDashExpression(FirstChar, LastChar):
     """This function converts the dash expression (for
     example, A-Z, a-z, 0-9) to lists of characters."""
+    # Should I use string.ascii_letters instead?
 
     # print '\'', FirstChar, '\' to \'', LastChar, '\''
 
-    if FirstChar in DIGIT:
-        if LastChar not in DIGIT:
-            return
-        else:
-            IndexHigh = max([DIGIT.index(FirstChar),
-                            DIGIT.index(LastChar)])
-            IndexLow = min([DIGIT.index(FirstChar),
-                           DIGIT.index(LastChar)])
-            return zip(['DIGIT'] * (IndexHigh - IndexLow + 1),
-                       DIGIT[IndexLow : IndexHigh + 1])
+    if FirstChar in DIGIT and LastChar in DIGIT:
+        IndexHigh = max([DIGIT.index(FirstChar),
+                        DIGIT.index(LastChar)])
+        IndexLow = min([DIGIT.index(FirstChar),
+                       DIGIT.index(LastChar)])
+        return zip(['DIGIT'] * (IndexHigh - IndexLow + 1),
+                   DIGIT[IndexLow : IndexHigh + 1])
                        
-    elif FirstChar in LETTER_LOWER:
-        if LastChar not in LETTER_LOWER:
-            return
-        else:
-            IndexHigh = max([LETTER_LOWER.index(FirstChar),
-                            LETTER_LOWER.index(LastChar)])
-            IndexLow = min([LETTER_LOWER.index(FirstChar),
-                           LETTER_LOWER.index(LastChar)])
-            return zip(['LETTER'] * (IndexHigh - IndexLow + 1),
-                       LETTER_LOWER[IndexLow : IndexHigh + 1])
-    elif FirstChar in LETTER_UPPER:
-        if LastChar not in LETTER_UPPER:
-            return
-        else:
-            IndexHigh = max([LETTER_UPPER.index(FirstChar),
-                            LETTER_UPPER.index(LastChar)])
-            IndexLow = min([LETTER_UPPER.index(FirstChar),
-                           LETTER_UPPER.index(LastChar)])
-            return zip(['LETTER'] * (IndexHigh - IndexLow + 1),
-                       LETTER_UPPER[IndexLow : IndexHigh + 1])
-    
-    return list()
+    elif FirstChar in LETTER_LOWER and LastChar in LETTER_LOWER:
+        IndexHigh = max([LETTER_LOWER.index(FirstChar),
+                        LETTER_LOWER.index(LastChar)])
+        IndexLow = min([LETTER_LOWER.index(FirstChar),
+                       LETTER_LOWER.index(LastChar)])
+        return zip(['LETTER'] * (IndexHigh - IndexLow + 1),
+                   LETTER_LOWER[IndexLow : IndexHigh + 1])
 
-def __TestConvertDashExpression():
-    # reverse order
-    print '7-1 =>', ConvertDashExpression('7', '1')
-    # letter in lower case
-    print 'a-t =>', ConvertDashExpression('a', 't')
-    # upper case
-    print 'D-G =>', ConvertDashExpression('D', 'G')
-    # letter in different case (should return None)
-    print 'a-A =>', ConvertDashExpression('a', 'A')
+    elif FirstChar in LETTER_UPPER and LastChar in LETTER_UPPER:
+        IndexHigh = max([LETTER_UPPER.index(FirstChar),
+                        LETTER_UPPER.index(LastChar)])
+        IndexLow = min([LETTER_UPPER.index(FirstChar),
+                       LETTER_UPPER.index(LastChar)])
+        return zip(['LETTER'] * (IndexHigh - IndexLow + 1),
+                   LETTER_UPPER[IndexLow : IndexHigh + 1])
+    else:
+        return list()
+
+# def __TestConvertDashExpression():
+#     # reverse order
+#     print '7-1 =>', ConvertDashExpression('7', '1')
+#     # letter in lower case
+#     print 'a-t =>', ConvertDashExpression('a', 't')
+#     # upper case
+#     print 'D-G =>', ConvertDashExpression('D', 'G')
+#     # letter in different case (should return None)
+#     print 'a-A =>', ConvertDashExpression('a', 'A')
+
+#     print 'a-a =>', ConvertDashExpression('a', 'a')
 
 def __FindDuplicate(List):
     """heck if there is duplicate in CHARACTER"""
