@@ -26,6 +26,7 @@ class Parser:
             self.DefineRE(exp)
             self.REtoNFA()
             self.NFAtoDFA()
+            self.MinimizeDFA()
         else:
             # should raise exception
             pass
@@ -214,10 +215,10 @@ class Parser:
             idx = 0
             # __counter = 0
             while idx < len(LastRE):
-            	# if __counter > 100:
-            	# 	print 'ERROR!'
-            	# 	exit()
-            	# __counter += 1
+                # if __counter > 100:
+                #     print 'ERROR!'
+                #     exit()
+                # __counter += 1
                 if LastRE[idx][0] == 'AT_LEAST_ONE':
                     # find its operand
                     if idx == 0:
@@ -249,7 +250,7 @@ class Parser:
                         ModifiedRE = list()
                         idx = 0
                 else:
-                	idx += 1
+                    idx += 1
             return LastRE[:]
         
         def CheckPrec(Type, Level, TempStack):
@@ -388,10 +389,6 @@ class Parser:
         finite automata (DFA) by using Subset Construction
         """
         q0 = self.NFA.FindEpsilonClosure(self.NFA.GetStartState().pop())
-
-        for state in self.NFA.States:
-            print state.ID,
-        print ''
         Q = [q0,]
         WorkList = [q0,]
         SetCounter = 0
@@ -404,9 +401,9 @@ class Parser:
         __counter = 0
 
         while len(WorkList) > 0:
-            if __counter > 1000:
-                print 'ERROR!!'
-                exit()
+            # if __counter > 1000:
+            #     print 'ERROR!!'
+            #     exit()
             __counter += 1
 
             q = WorkList.pop()
@@ -424,9 +421,7 @@ class Parser:
                 t = self.NFA.FindTransitionList(q, char)
                 if len(t) == 0:
                     continue
-                print q, t,
                 t = self.NFA.FindEpsilonClosureList(t)
-                print t
 
                 # if t not in Q then
                 #     add t to Q and WorkList
@@ -439,17 +434,133 @@ class Parser:
                 # T[q, c] <- t
                 key = str(idx) + '_' + char
                 self.TransitionMap[key] = Q.index(t)
+        
+        self.NumStates = SetCounter
             
-        for key in self.TransitionMap.keys():
-            print key, '=>',
-            print self.TransitionMap[key]
-        print self.AcceptStates
+        # for key in self.TransitionMap.keys():
+        #     print key, '=>',
+        #     print self.TransitionMap[key]
+        # print 'Accept =', self.AcceptStates
         # print Q
     
     def MinimizeDFA(self, ):
         """This function minimizes the number of states of
         a given DFA by using Hopcroft's Algorithm."""
-        pass
+
+        def Split(S):
+            """This function split a given set according to their
+            reaction to input characters."""
+            # for each char do
+            #     if c splits S into s1 and s2
+            #         then return {s1, s2}
+            
+            # return S
+
+            
+
+        # T <- {Da, {D - Da}}
+        # P <- {}
+
+        T = [[ID for ID in range(self.NumStates + 1) if ID not in self.AcceptStates],
+            self.AcceptStates]
+        # print T
+        P = list()
+
+        # while P != T do
+        #     P <- T
+        #     T <- {}
+        #     for each set p in P do
+        #         T <- T | Split(p)
+        __counter = 0
+        while len(P) != len(T):
+            if __counter > 100:
+                print "ERROR!!"
+                exit()
+            __counter += 1
+            # print 'T =', T
+            P = T[:]
+            T = list()
+            for p in P:
+                # T.extend(Split(p))
+                # print p
+                if len(p) == 1:
+                    T.append(p)
+                    continue
+                
+                if len(p) < 1:
+                    print 'ERROR!!'
+                    exit()
+
+                s1 = list()
+                s2 = list()
+                for idx, char in enumerate(ForAllChar()):
+                    for state in p:
+                        # print '.',
+                        # state should be a string
+                        key = str(state) + '_' + char
+                        if key in self.TransitionMap:
+                            if self.TransitionMap[key] not in p:
+                                s2.append(state)
+                            else:
+                                s1.append(state)
+                        else:
+                            s2.append(state)
+                    # print '  temp', s1, s2
+                    if len(s2) > 0 and len(s1) > 0:
+                        break
+                    elif idx < len(p) - 1:
+                        # print 'del'
+                        del s1[:]
+                        del s2[:]
+                if len(s2) == 0 or len(s1) == 0:
+                    T.append(p)
+                else:
+                    # print 'split', s2, s1
+                    T.append(s1)
+                    T.append(s2)
+        
+        # print 'T =', T
+        # print P
+        
+        # Now, create a new Transition Map
+        NewTransitionMap = dict()
+        for States in T:
+            for char in ForAllChar():
+                key = str(States[0]) + '_' + char
+                if key in self.TransitionMap:
+                    NewTransitionMap[key] = self.TransitionMap[key]
+        
+        self.TransitionMap = dict(NewTransitionMap.items())
+        
+        # Modify the accepting State
+        NewAcceptStates = set()
+        for States in T:
+            for state in States:
+                if state in self.AcceptStates:
+                    NewAcceptStates.add(States[0])
+                    break
+        self.AcceptStates = list(NewAcceptStates)
+        
+        # Modify the starting State
+        NewStartStates = set()
+        for States in T:
+            for state in States:
+                if state in self.StartStates:
+                    NewStartStates.add(States[0])
+                    break
+        self.StartStates = list(NewStartStates)
+    
+    def Match(self, Str):
+        State = self.StartStates[0]
+        for idx, char in enumerate(Str):
+            key = str(State) + '_' + char
+            if key in self.TransitionMap:
+                State = self.TransitionMap[key]
+                if State in self.AcceptStates:
+                    return idx
+            else:
+                return -1
+
     
     def DFAtoRE(self, ):
         """This function transforms a given DFA into a
@@ -459,8 +570,11 @@ class Parser:
 
 if __name__ == '__main__':
     # re = '\\[\\*nad[b-eACD-]+[4-1]'
-    re = '(ab*|ba)*a'
+    # re = '(ab*|ba)*a'
+    re = '(ab|aaa)bbba'
     # re = 'aba|ab'
     parser = Parser(re)
     # print ConvertDashExpression('7', '1')
+
+    print parser.Match('abbbbabaaa')
     
