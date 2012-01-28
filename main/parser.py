@@ -12,6 +12,7 @@ from rule import CheckIsChar
 from rule import CheckPrecedenceHigherThan
 from rule import CheckPrecedenceLessThan
 from rule import CheckIsOneOprandOp
+from rule import ForAllChar
 
 
 class Parser:
@@ -24,6 +25,7 @@ class Parser:
         if type(exp) is str and len(exp) is not 0:
             self.DefineRE(exp)
             self.REtoNFA()
+            self.NFAtoDFA()
         else:
             # should raise exception
             pass
@@ -348,7 +350,7 @@ class Parser:
         #     print Value,
 
         self.FAStack = list()
-        self.FACounter = 0
+        FACounter = 0
 
         for Type, Value, Level in Stack:
             if CheckIsOp(Type):
@@ -368,23 +370,81 @@ class Parser:
                     pass
             else:
                 # It's a char. create a NFA for this char
-                fa = FiniteAutomata(self.FACounter, Value)
+                fa = FiniteAutomata(FACounter, Value)
                 self.FAStack.append(fa)
+                FACounter += 1
         
         if len(self.FAStack) != 1:
             print 'More than one FA left in the stack!'
             pass
         
         self.NFA = self.FAStack.pop()
-        self.NFA.Print()
+        # self.NFA.Print()
 
         # return fa
     
-    def NFAtoDFA(self, ):
+    def NFAtoDFA(self):
         """This function transforms a NFA to deterministic
         finite automata (DFA) by using Subset Construction
         """
-        pass
+        q0 = self.NFA.FindEpsilonClosure(self.NFA.GetStartState().pop())
+
+        for state in self.NFA.States:
+            print state.ID,
+        print ''
+        Q = [q0,]
+        WorkList = [q0,]
+        SetCounter = 0
+        WorkListIndex = [SetCounter,]
+
+        self.TransitionMap = dict()
+        self.StartStates = [0,]
+        self.AcceptStates = list()
+
+        __counter = 0
+
+        while len(WorkList) > 0:
+            if __counter > 1000:
+                print 'ERROR!!'
+                exit()
+            __counter += 1
+
+            q = WorkList.pop()
+            idx = WorkListIndex.pop()
+
+            for state in q:
+                # print state, self.NFA.GetAcceptState()
+                if state in self.NFA.GetAcceptState():
+                    self.AcceptStates.append(idx)
+                    break
+
+            for char in ForAllChar():
+                # t <- e-closure(Delta(q, c))
+                
+                t = self.NFA.FindTransitionList(q, char)
+                if len(t) == 0:
+                    continue
+                print q, t,
+                t = self.NFA.FindEpsilonClosureList(t)
+                print t
+
+                # if t not in Q then
+                #     add t to Q and WorkList
+                if t not in Q:
+                    SetCounter += 1
+                    Q.append(t)
+                    WorkList.append(t)
+                    WorkListIndex.append(SetCounter)
+                
+                # T[q, c] <- t
+                key = str(idx) + '_' + char
+                self.TransitionMap[key] = Q.index(t)
+            
+        for key in self.TransitionMap.keys():
+            print key, '=>',
+            print self.TransitionMap[key]
+        print self.AcceptStates
+        # print Q
     
     def MinimizeDFA(self, ):
         """This function minimizes the number of states of
@@ -400,7 +460,7 @@ class Parser:
 if __name__ == '__main__':
     # re = '\\[\\*nad[b-eACD-]+[4-1]'
     re = '(ab*|ba)*a'
-    # re = 'aba|cdc|efe|ghg'
+    # re = 'aba|ab'
     parser = Parser(re)
     # print ConvertDashExpression('7', '1')
     
