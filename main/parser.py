@@ -441,7 +441,6 @@ class Parser:
         #     print key, '=>',
         #     print self.TransitionMap[key]
         # print 'Accept =', self.AcceptStates
-        # print Q
     
     def MinimizeDFA(self, ):
         """This function minimizes the number of states of
@@ -463,6 +462,11 @@ class Parser:
 
         T = [[ID for ID in range(self.NumStates + 1) if ID not in self.AcceptStates],
             self.AcceptStates]
+        Set1 = [ID for ID in range(self.NumStates + 1) if ID not in self.AcceptStates]
+        if len(Set1) > 0:
+            T = [Set1, self.AcceptStates]
+        else:
+            T = [self.AcceptStates]
         # print T
         P = list()
 
@@ -473,8 +477,8 @@ class Parser:
         #         T <- T | Split(p)
         __counter = 0
         while len(P) != len(T):
-            if __counter > 100:
-                print "ERROR!!"
+            if __counter > 10:
+                print "ERROR: loop forever"
                 exit()
             __counter += 1
             # print 'T =', T
@@ -488,7 +492,7 @@ class Parser:
                     continue
                 
                 if len(p) < 1:
-                    print 'ERROR!!'
+                    print 'ERROR: len(p) < 1,', p
                     exit()
 
                 s1 = list()
@@ -508,8 +512,8 @@ class Parser:
                     # print '  temp', s1, s2
                     if len(s2) > 0 and len(s1) > 0:
                         break
-                    elif idx < len(p) - 1:
-                        # print 'del'
+                    elif idx < len(ForAllChar()) - 1:
+                        # print '  del'
                         del s1[:]
                         del s2[:]
                 if len(s2) == 0 or len(s1) == 0:
@@ -520,15 +524,26 @@ class Parser:
                     T.append(s2)
         
         # print 'T =', T
-        # print P
-        
+        # # print Pself.TransitionMap
+        # print self.TransitionMap
+
         # Now, create a new Transition Map
         NewTransitionMap = dict()
         for States in T:
+            # print States
             for char in ForAllChar():
                 key = str(States[0]) + '_' + char
                 if key in self.TransitionMap:
-                    NewTransitionMap[key] = self.TransitionMap[key]
+                    # Cannot directly copy the destination state
+                    # have to use the new state
+                    # NewTransitionMap[key] = self.TransitionMap[key]
+                    # print ' ', key, '(',
+                    # print self.TransitionMap[key]
+                    for states in T:
+                        if self.TransitionMap[key] in states:
+                            # print '   ', key, '(',
+                            # print self.TransitionMap[key], 'in', states
+                            NewTransitionMap[key] = states[0]
         
         self.TransitionMap = dict(NewTransitionMap.items())
         
@@ -549,17 +564,27 @@ class Parser:
                     NewStartStates.add(States[0])
                     break
         self.StartStates = list(NewStartStates)
+
+        # for key, value in self.TransitionMap.items():
+        #     print key, '=>', value
+        # print 'Accept =', self.AcceptStates
+        # print 'Start =', self.StartStates
     
-    def Match(self, Str):
+    def Match(self, Str, Greedy=True):
+        LastMatch = -1
         State = self.StartStates[0]
         for idx, char in enumerate(Str):
             key = str(State) + '_' + char
             if key in self.TransitionMap:
                 State = self.TransitionMap[key]
                 if State in self.AcceptStates:
-                    return idx
+                    if Greedy:
+                        LastMatch = idx
+                    else:
+                        return idx
             else:
-                return -1
+                return LastMatch
+        return LastMatch
 
     
     def DFAtoRE(self, ):
@@ -570,11 +595,11 @@ class Parser:
 
 if __name__ == '__main__':
     # re = '\\[\\*nad[b-eACD-]+[4-1]'
-    # re = '(ab*|ba)*a'
-    re = '(ab|aaa)bbba'
+    re = '(ab*|ba)*a'
+    # re = '(ab|aaa)bbba'
+    # re = 'a*'
     # re = 'aba|ab'
     parser = Parser(re)
     # print ConvertDashExpression('7', '1')
 
-    print parser.Match('abbbbabaaa')
-    
+    print parser.Match('abbbbabaaa', True)
