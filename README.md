@@ -1,9 +1,10 @@
 A Regular Expression Parser
 ===========================
 
-This is a regular expression parser, it transforms a given regular expression 
-to a non-deterministic finite automata (NFA), then transforms it into a 
-deterministic finite automata (DFA).
+
+This is a regular expression parser in Python, it transforms a given regular
+expression to a non-deterministic finite automata (NFA), then transforms it 
+into a deterministic finite automata (DFA).
 
 
 Current Status
@@ -19,6 +20,19 @@ operators:
 * Zero or one -- `?`
 
 Any other operators are not yet implemented.
+
+
+
+Usage
+-----
+
+    >>> import parser
+    >>> p = parser.Parser()
+    >>> re = 'a[a-c]*'
+    >>> string = 'aaaaaaa'
+    >>> print 'Position where string', string, 'is matched by re', re, ':',
+
+    Position where string aaaaaaa is matched by re a[a-c]* : 6
 
 
 
@@ -290,6 +304,13 @@ transitions are the same. If not, then states with different destination
 states are splitted into two sets. This process keeps on until no more new
 set of states can be generated. That is, we are done when all states in the
 same set have same behavior.
+
+
+
+Future Plan
+-----------
+
+Make it more useful. I'll probably try to make it more like the `re` module.
 
 
 
