@@ -29,9 +29,9 @@ Usage
     >>> p = parser.Parser()
     >>> re = 'a[a-c]*'
     >>> string = 'aaaaaaa'
-    >>> print 'String', string, 'is matched by re at', re, ':', parser.Match(string, True)
+    >>> print 'String', string, 'is matched by re', re, 'at :', parser.Match(string, True)
 
-    String aaaaaaa is matched by re at a[a-c]* : 6
+    String aaaaaaa is matched by re a[a-c]* at : 6
 
 
 
