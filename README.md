@@ -32,7 +32,7 @@ Usage
     >>> string = 'aaaaaaa'
     >>> print 'String', string, 'is matched by re at', re, ':', parser.Match(string, True)
 
-    Position where string aaaaaaa is matched by re a[a-c]* : 6
+    String aaaaaaa is matched by re at a[a-c]* : 6
 
 
 
