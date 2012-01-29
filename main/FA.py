@@ -5,7 +5,8 @@
 # acquired from stackoverflow: "How do you remove duplicates from
 # a list in Python whilst preserving order?""
 # I made a mistake here: this funtion is used to remove lists with
-# the first item being the same, so it's not suitable for my use here
+# the first item being the same, so it's not suitable for this
+# program.
 # 
 # def UniqueElem(seq):
 #     seen = set()
