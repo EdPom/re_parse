@@ -45,12 +45,8 @@ class test_RuleFunction(unittest.TestCase):
             for id2, char2 in enumerate(string.ascii_lowercase):
                 val = rule.ConvertDashExpression(char1, char2)
                 
-                if id1 > id2:
-                    high = id1
-                    low = id2
-                else:
-                    high = id2
-                    low = id1
+                high = max(id1, id2)
+                low = min(id1, id2)
                 
                 ans = zip(['LETTER'] * (high - low + 1),
                           list(string.ascii_lowercase[low:high+1]))
@@ -62,12 +58,8 @@ class test_RuleFunction(unittest.TestCase):
             for id2, char2 in enumerate(string.ascii_uppercase):
                 val = rule.ConvertDashExpression(char1, char2)
                 
-                if id1 > id2:
-                    high = id1
-                    low = id2
-                else:
-                    high = id2
-                    low = id1
+                high = max(id1, id2)
+                low = min(id1, id2)
                 
                 ans = zip(['LETTER'] * (high - low + 1),
                           list(string.ascii_uppercase[low:high+1]))
@@ -79,12 +71,8 @@ class test_RuleFunction(unittest.TestCase):
             for id2, char2 in enumerate(string.digits):
                 val = rule.ConvertDashExpression(char1, char2)
                 
-                if id1 > id2:
-                    high = id1
-                    low = id2
-                else:
-                    high = id2
-                    low = id1
+                high = max(id1, id2)
+                low = min(id1, id2)
                 
                 ans = zip(['DIGIT'] * (high - low + 1),
                           list(string.digits[low:high+1]))

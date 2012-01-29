@@ -107,15 +107,6 @@ class FiniteAutomata:
         self.AddTransition(s1, s2, char)
         self.SetAcceptState(s2)
         self.SetStartState(s1)
-
-    # def FindStateByID(self, ID):
-    #     # print "ID =", ID
-    #     # val = list()
-    #     # for state in self.States:
-    #     #     if state.ID == ID:
-    #     #         val.append(state)
-    #     # return val
-    #     return [state for state in self.States if state.ID == ID]
     
     def AddState(self):
         # There shouldn't be a state with the same ID
@@ -131,7 +122,10 @@ class FiniteAutomata:
         return StateID
 
     def FindStatePosByID(self, ID):
+        """This function return the position of the index in
+        the list 'States' when its ID is matched."""
         for idx, state in enumerate(self.States):
+            # state ID is assumed to be unique in the list
             if state.ID == ID:
                 return idx
         return -1
@@ -292,25 +286,6 @@ class FiniteAutomata:
         for state in self.States:
             state.Print()
 
-    # def GetStates(self):
-    #     return self.States[:]
-
-class FiniteAutomataManager:
-
-    def __init__(self):
-        self.FACounter = 0
-        self.FAs = list()
-    
-    def CreateFA(char):
-        fa = FiniteAutomata(self.FACounter)
-        s1 = fa.AddState()
-        s2 = fa.AddState()
-        fa.AddTransition(s1, s2, char)
-        fa.SetAcceptState(s2)
-        fa.SetStartState(s1)
-        self.FACounter += 1
-
-        return fa
     
 if __name__ == '__main__':
 

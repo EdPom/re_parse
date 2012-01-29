@@ -1,18 +1,8 @@
 # File Name : parser.py
 # Description : This file implements the main parser
 #     functionality.
-from FA import State
-from FA import FiniteAutomata
-from rule import CheckCharType
-from rule import CheckConcatenation
-from rule import ConvertDashExpression
-from rule import IsValidDashOperand
-from rule import CheckIsOp
-from rule import CheckIsChar
-from rule import CheckPrecedenceHigherThan
-from rule import CheckPrecedenceLessThan
-from rule import CheckIsOneOprandOp
-from rule import ForAllChar
+import FA
+import rule
 
 
 class Parser:
@@ -22,21 +12,23 @@ class Parser:
     def __init__(self, exp=None):
         """This function implements the initialization
         process of the parser class."""
-        if type(exp) is str and len(exp) is not 0:
-            self.DefineRE(exp)
-            self.REtoNFA()
-            self.NFAtoDFA()
-            self.MinimizeDFA()
-        else:
-            # should raise exception
-            pass
+
+        # invalid input is now handled in ScanRE
+        self.DefineRE(exp)
+
+        # These functions are moved to DefineRE(), so they can be triggered
+        # after defining new regular expressions
+        # self.REtoNFA()
+        # self.NFAtoDFA()
+        # self.MinimizeDFA()
+
         
     def ScanRE(self, exp):
         """Used to parse the regular expression into an
         intermediate representation."""
         # Make sure the expression is not empty
-        if type(exp) is not str:
-            return
+        assert type(exp) is str 
+        assert exp
         
         self.NotedRE = list()
 
@@ -51,7 +43,7 @@ class Parser:
                 ch = exp[i]
                 i += 1
             
-            self.NotedRE.append(CheckCharType(ch))
+            self.NotedRE.append(rule.CheckCharType(ch))
 
 
     def DefineRE(self, exp):
@@ -59,15 +51,19 @@ class Parser:
         and transforms it internally."""
 
         # Clean old RE and its DFA (if it exist)
-        try:
-            del self.FA
-        except AttributeError:
-            pass
+        # try:
+        #     del self.FA
+        # except AttributeError:
+        #     pass
 
         # process the new RE
         self.Stack = list()
         # should tell the user if there's error
         self.ScanRE(exp)
+
+        self.REtoNFA()
+        self.NFAtoDFA()
+        self.MinimizeDFA()
     
     def REtoNFA(self):
         """This function transforms a regular expression to
@@ -79,8 +75,7 @@ class Parser:
             in the original regular expression, so we
             add them to the RE in here."""
 
-            if len(NotedRE) == 0:
-                return
+            assert NotedRE
             
             ModifiedRE = list()
             LastType = None
@@ -91,7 +86,7 @@ class Parser:
                     InBracket = False
                 elif LastType is None:
                     InBracket = False
-                if idx > 0 and CheckConcatenation(Type,
+                if idx > 0 and rule.CheckConcatenation(Type,
                                                   LastType,
                                                   InBracket):
                     ModifiedRE.append(('CONCATENATION', None))
@@ -114,7 +109,7 @@ class Parser:
                             ModifiedRE.append(('ALTERNATION', '|'))
                             ModifiedRE.append(('CHARACTER', Value))
                     else:
-                        Test2 = IsValidDashOperand(Value)
+                        Test2 = rule.IsValidDashOperand(Value)
                         Test3 = idx == len(NotedRE) - 1
                         if Test3 and Test2:
                             ModifiedRE.append(('ALTERNATION', '|'))
@@ -123,12 +118,12 @@ class Parser:
                             if idx > 0:
                                 ModifiedRE.append(('ALTERNATION', '|'))
                             ModifiedRE.append((Type, Value))
-                elif FlagDash and IsValidDashOperand(Value):
+                elif FlagDash and rule.IsValidDashOperand(Value):
                     CharTo = Value
                     # if PosFrom > 0:
                     #     print '1'
                     #     ModifiedRE.append(('ALTERNATION', '|'))
-                    for idx, (Type, Value) in enumerate(ConvertDashExpression(CharFrom,
+                    for idx, (Type, Value) in enumerate(rule.ConvertDashExpression(CharFrom,
                                                              CharTo)):
                         if idx > 0 or PosFrom > 0:
                             ModifiedRE.append(('ALTERNATION', '|'))
@@ -136,7 +131,6 @@ class Parser:
                     FlagDash = False
             
             return ModifiedRE[:]
-            # pass
 
         def AddAlterToNotedRE(NotedRE):
             """Since alternations are already specified
@@ -144,8 +138,7 @@ class Parser:
             this function does is to change things inside
             brackets to a string of alternations."""
 
-            if len(NotedRE) == 0:
-                return
+            assert NotedRE
             
             ModifiedRE = list()
             REToTransform = list()
@@ -167,7 +160,7 @@ class Parser:
                     if not InBracket:
                         ModifiedRE.append((Type, Value))
                     else:
-                        if IsValidDashOperand(Value) or Type == 'DASH':
+                        if rule.IsValidDashOperand(Value) or Type == 'DASH':
                             REToTransform.append((Type, Value))
                 
                 LastType = Type
@@ -177,27 +170,27 @@ class Parser:
             """This function find the position of the
             last operand before the given position"""
 
-            if len(NotedRE) == 0:
-                # TODO: tell the user about the error
-                return
+            assert NotedRE
+            
             Count = 0
             for i in range(Pos - 1, -1, -1):
                 if NotedRE[i][0] is 'RIGHT_PARENTHESES':
                     Count += 1
                 elif NotedRE[i][0] is 'LEFT_PARENTHESES':
                     Count -= 1
+                
                 if Count == 0:
                     return i
+            
+            assert Count == 0
 
 
         def ConvertToSimpleRE(NotedRE):
             """This function transforms special
             operators to a combination of simple
             operators ('|', '*', concatenation)"""
-
-            if len(NotedRE) == 0:
-                # TODO: tell the user about the error
-                return
+            
+            assert NotedRE
             
             # At this point, there shouldn't be any
             # square bracket in the RE, so operands
@@ -221,50 +214,49 @@ class Parser:
                 # __counter += 1
                 if LastRE[idx][0] == 'AT_LEAST_ONE':
                     # find its operand
-                    if idx == 0:
-                        # should raise an error here
-                        return
-                    else:
-                        Pos = FindLastOpBeforePos(LastRE[:idx], idx)
-                        # The operand is LastRE[Pos:idx]
-                        Operand = LastRE[Pos:idx]
-                        # Push things before the operand in the q
-                        for Type, Value in LastRE[:Pos]:
-                            ModifiedRE.append((Type, Value))
-                        # Deal with the operand
-                        # op+ = op.op* (. is concat)
-                        # push in op
-                        for Type, Value in Operand:
-                            ModifiedRE.append((Type, Value))
-                        # push in concatenation
-                        ModifiedRE.append(('CONCATENATION', None))
-                        # push in op
-                        for Type, Value in Operand:
-                            ModifiedRE.append((Type, Value))
-                        # push in closure
-                        ModifiedRE.append(('CLOSURE', '*'))
-                        # Deal with the rest
-                        for Type, Value in LastRE[idx+1:]:
-                            ModifiedRE.append((Type, Value))
-                        LastRE = ModifiedRE[:]
-                        ModifiedRE = list()
-                        idx = 0
+                    assert idx
+
+                    Pos = FindLastOpBeforePos(LastRE[:idx], idx)
+                    # The operand is LastRE[Pos:idx]
+                    Operand = LastRE[Pos:idx]
+                    # Push things before the operand in the q
+                    for Type, Value in LastRE[:Pos]:
+                        ModifiedRE.append((Type, Value))
+                    # Deal with the operand
+                    # op+ = op.op* (. is concat)
+                    # push in op
+                    for Type, Value in Operand:
+                        ModifiedRE.append((Type, Value))
+                    # push in concatenation
+                    ModifiedRE.append(('CONCATENATION', None))
+                    # push in op
+                    for Type, Value in Operand:
+                        ModifiedRE.append((Type, Value))
+                    # push in closure
+                    ModifiedRE.append(('CLOSURE', '*'))
+                    # Deal with the rest
+                    for Type, Value in LastRE[idx+1:]:
+                        ModifiedRE.append((Type, Value))
+                    LastRE = ModifiedRE[:]
+                    ModifiedRE = list()
+                    idx = 0
+
                 else:
                     idx += 1
+
             return LastRE[:]
         
         def CheckPrec(Type, Level, TempStack):
-            # print Type,
 
             try:
-                # print TempStack[-1][0],
-                PrecHigherThan = CheckPrecedenceHigherThan(Type, TempStack[-1][0])
-                PrecLessThan = CheckPrecedenceLessThan(Type, TempStack[-1][0])
+                PrecHigherThan = rule.CheckPrecedenceHigherThan(Type,
+                                                            TempStack[-1][0])
+                PrecLessThan = rule.CheckPrecedenceLessThan(Type,
+                                                            TempStack[-1][0])
                 SameLevel = Level == TempStack[-1][2]
             except IndexError:
-                # print 'None',
-                PrecHigherThan = CheckPrecedenceHigherThan(Type, None)
-                PrecLessThan = CheckPrecedenceLessThan(Type, None)
+                PrecHigherThan = rule.CheckPrecedenceHigherThan(Type, None)
+                PrecLessThan = rule.CheckPrecedenceLessThan(Type, None)
                 SameLevel = False
             
             return PrecHigherThan, PrecLessThan, SameLevel
@@ -272,8 +264,7 @@ class Parser:
         # REtoNFA finally starts here...
 
         # should check if NotedRE exist
-        if len(self.NotedRE) == 0:
-            return
+        assert self.NotedRE
         
         self.NotedRE = AddConcatToNotedRE(self.NotedRE)
         self.NotedRE = AddAlterToNotedRE(self.NotedRE)
@@ -282,7 +273,7 @@ class Parser:
         TempStack = list()
         Level = 0
         for Type, Value in self.NotedRE:
-            if CheckIsChar(Type):
+            if rule.CheckIsChar(Type):
                 # Chars are put into the stack directly
                 Stack.append((Type, Value, Level))
             elif Type == 'LEFT_PARENTHESES':
@@ -291,40 +282,41 @@ class Parser:
             elif Type == 'RIGHT_PARENTHESES':
                 # all operator has to be put into the stack before we leave
                 # this level
-                if len(TempStack) > 0:
+                if TempStack:
                     if TempStack[-1][2] == Level:
                         while True:
                             Stack.append(TempStack.pop())
-                            if len(TempStack) == 0 or TempStack[-1][2] != Level:
+                            if not TempStack or TempStack[-1][2] != Level:
                                 break
 
                 Level -= 1
-            elif CheckIsOp(Type):
+            elif rule.CheckIsOp(Type):
                 
                 while True:
-                    PrecHigherThan, PrecLessThan, SameLevel = CheckPrec(Type, Level, TempStack)
+                    PrecHigherThan, PrecLessThan, SameLevel = CheckPrec(Type,
+                                                            Level, TempStack)
                     
                     # operators like closure should be put into stack directly
                     # since they are associated with one operand only, so we don't
                     # have to consider their precedence
-                    if CheckIsOneOprandOp(Type):
+                    if rule.CheckIsOneOprandOp(Type):
                         Stack.append((Type, Value, Level))
                         break
 
                     # otherwise, we can push the previous operator in the stack, but
                     # still can't push the current operator into the stack
                     elif PrecHigherThan and SameLevel:
-                        # print '>'
-                        # Stack.append(TempStack.pop())
+                        # push into wait stack
                         TempStack.append((Type, Value, Level))
                         break
                     
                     elif PrecLessThan and SameLevel:
-                        # print '<'
+                        # pop the first item from wait stack, and compare again
                         Stack.append(TempStack.pop())
                     
                     elif not PrecLessThan and not PrecHigherThan and SameLevel:
-                        # print '='
+                        # pop the first item from wait stack, then push the current
+                        # item into wait stack
                         Stack.append(TempStack.pop())
                         TempStack.append((Type, Value, Level))
                         break
@@ -333,57 +325,65 @@ class Parser:
                     # the previous one, than we can't put the operator in the stack
                     # yet since the other operator has not shown up
                     else:
-                        # print '!'
                         TempStack.append((Type, Value, Level))
                         break
 
             else:
                 # Error!
                 print 'ERROR: unknown char type.'
+                assert False
         
-        if len(TempStack) > 0:
+        if TempStack:
             TempStack.reverse()
             Stack.extend(TempStack)
         
         # At this moment, RE has already been transformed to stacks!
-        
-        # for Type, Value, Level in Stack:
-        #     print Value,
 
         self.FAStack = list()
         FACounter = 0
 
+        # Thompson's construction
+        # pop element from stack, create a finite automata for it, then
+        # push the FA to the stack
         for Type, Value, Level in Stack:
-            if CheckIsOp(Type):
+            if rule.CheckIsOp(Type):
                 if Type == 'CLOSURE':
+                    # closure only needs one operand, so only one pop()
+                    # performed
                     fa = self.FAStack.pop()
                     fa.CreateClosure()
                     self.FAStack.append(fa)
+
                 elif Type == 'CONCATENATION':
+                    # concatenation requires two operand, so two pop()
+                    # performed
                     fa = self.FAStack.pop()
+
+                    # the FA passed toCreateConcatenation will be attached
+                    # after this FA
                     fa.CreateConcatenation(self.FAStack.pop())
                     self.FAStack.append(fa)
+
                 elif Type == 'ALTERNATION':
                     fa = self.FAStack.pop()
                     fa.CreateAlternation(self.FAStack.pop())
                     self.FAStack.append(fa)
+
                 else:
-                    pass
+                    # There should not be any other type of operators in
+                    # the stack
+                    print 'Wrong operator type.'
+                    assert False
             else:
                 # It's a char. create a NFA for this char
-                fa = FiniteAutomata(FACounter, Value)
+                fa = FA.FiniteAutomata(FACounter, Value)
                 self.FAStack.append(fa)
                 FACounter += 1
         
-        if len(self.FAStack) != 1:
-            print 'More than one FA left in the stack!'
-            pass
-        
+        assert len(self.FAStack) == 1
         self.NFA = self.FAStack.pop()
-        # self.NFA.Print()
-
-        # return fa
     
+
     def NFAtoDFA(self):
         """This function transforms a NFA to deterministic
         finite automata (DFA) by using Subset Construction
@@ -398,26 +398,18 @@ class Parser:
         self.StartStates = [0,]
         self.AcceptStates = list()
 
-        __counter = 0
-
         while len(WorkList) > 0:
-            # if __counter > 1000:
-            #     print 'ERROR!!'
-            #     exit()
-            __counter += 1
 
             q = WorkList.pop()
             idx = WorkListIndex.pop()
 
             for state in q:
-                # print state, self.NFA.GetAcceptState()
                 if state in self.NFA.GetAcceptState():
                     self.AcceptStates.append(idx)
                     break
 
-            for char in ForAllChar():
+            for char in rule.ForAllChar():
                 # t <- e-closure(Delta(q, c))
-                
                 t = self.NFA.FindTransitionList(q, char)
                 if len(t) == 0:
                     continue
@@ -455,21 +447,20 @@ class Parser:
             
             # return S
 
-            
-
         # T <- {Da, {D - Da}}
         # P <- {}
 
         T = [[ID for ID in range(self.NumStates + 1) if ID not in self.AcceptStates],
             self.AcceptStates]
         Set1 = [ID for ID in range(self.NumStates + 1) if ID not in self.AcceptStates]
-        if len(Set1) > 0:
+        if Set1:
             T = [Set1, self.AcceptStates]
         else:
             T = [self.AcceptStates]
-        # print T
         P = list()
 
+        # Minimize DFA using the following algorithm:
+        # 
         # while P != T do
         #     P <- T
         #     T <- {}
@@ -481,25 +472,22 @@ class Parser:
                 print "ERROR: loop forever"
                 exit()
             __counter += 1
-            # print 'T =', T
+            
             P = T[:]
             T = list()
             for p in P:
-                # T.extend(Split(p))
-                # print p
                 if len(p) == 1:
+                    # p has only one member, nothing to split
                     T.append(p)
                     continue
-                
-                if len(p) < 1:
-                    print 'ERROR: len(p) < 1,', p
-                    exit()
+                # p should not be empty
+                assert p
 
                 s1 = list()
                 s2 = list()
-                for idx, char in enumerate(ForAllChar()):
+                # main splitting function
+                for idx, char in enumerate(rule.ForAllChar()):
                     for state in p:
-                        # print '.',
                         # state should be a string
                         key = str(state) + '_' + char
                         if key in self.TransitionMap:
@@ -509,40 +497,36 @@ class Parser:
                                 s1.append(state)
                         else:
                             s2.append(state)
-                    # print '  temp', s1, s2
-                    if len(s2) > 0 and len(s1) > 0:
+                    
+                    if s2 and s1:
+                        # set splitted. exit the loop to update the main list
                         break
-                    elif idx < len(ForAllChar()) - 1:
-                        # print '  del'
+                    elif idx < len(rule.ForAllChar()) - 1:
+                        # clear s1 and s2, enter the next round
                         del s1[:]
                         del s2[:]
-                if len(s2) == 0 or len(s1) == 0:
+
+                if not s2 or not s1:
+                    # the set is not splitted, so just append p
                     T.append(p)
                 else:
-                    # print 'split', s2, s1
+                    # set is splitted into s1 and s2
                     T.append(s1)
                     T.append(s2)
-        
-        # print 'T =', T
-        # # print Pself.TransitionMap
-        # print self.TransitionMap
 
         # Now, create a new Transition Map
         NewTransitionMap = dict()
         for States in T:
-            # print States
-            for char in ForAllChar():
+            for char in rule.ForAllChar():
                 key = str(States[0]) + '_' + char
                 if key in self.TransitionMap:
-                    # Cannot directly copy the destination state
-                    # have to use the new state
-                    # NewTransitionMap[key] = self.TransitionMap[key]
-                    # print ' ', key, '(',
-                    # print self.TransitionMap[key]
+                    # Cannot directly copy the destination state, because they
+                    # already have new ids. have to use the new state id here
                     for states in T:
                         if self.TransitionMap[key] in states:
-                            # print '   ', key, '(',
-                            # print self.TransitionMap[key], 'in', states
+                            # doesn't matter which id in the set is used, since
+                            # they all have the same behavior
+                            # choose first state here
                             NewTransitionMap[key] = states[0]
         
         self.TransitionMap = dict(NewTransitionMap.items())
@@ -572,12 +556,12 @@ class Parser:
     
     def Match(self, Str, Greedy=True):
         LastMatch = -1
-        State = self.StartStates[0]
+        state = self.StartStates[0]
         for idx, char in enumerate(Str):
-            key = str(State) + '_' + char
+            key = str(state) + '_' + char
             if key in self.TransitionMap:
-                State = self.TransitionMap[key]
-                if State in self.AcceptStates:
+                state = self.TransitionMap[key]
+                if state in self.AcceptStates:
                     if Greedy:
                         LastMatch = idx
                     else:
@@ -587,7 +571,7 @@ class Parser:
         return LastMatch
 
     
-    def DFAtoRE(self, ):
+    def DFAtoRE(self):
         """This function transforms a given DFA into a
         regular expression using Kleene's construction."""
 
@@ -595,11 +579,23 @@ class Parser:
 
 if __name__ == '__main__':
     # re = '\\[\\*nad[b-eACD-]+[4-1]'
-    re = '(ab*|ba)*a'
+    # re = '(ab*|ba)*a'
+    # re = '[a-c]+'
+    re = 'aa(a|b|c)'
     # re = '(ab|aaa)bbba'
     # re = 'a*'
     # re = 'aba|ab'
-    parser = Parser(re)
-    # print ConvertDashExpression('7', '1')
+    # re = '*a'
+    # re = ''
+    # re = '((()))'
 
-    print parser.Match('abbbbabaaa', True)
+    parser = Parser(re)
+
+    string = 'aaaaaaa'
+
+    print 'Position where string', string, 'is matched by re', re, ':',
+    # print parser.Match(string, False)
+    pos = parser.Match(string, True)
+    print pos
+    print string
+    print ' ' * pos + '^'
