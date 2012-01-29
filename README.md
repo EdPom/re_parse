@@ -6,7 +6,7 @@ to a non-deterministic finite automata (NFA), then transforms it into a
 deterministic finite automata (DFA).
 
 
-The rule of RE
+Current Status
 --------------
 
 For now, this parser only accepts a regular expression that contains the basic
@@ -19,6 +19,7 @@ operators:
 * Zero or one -- `?`
 
 Any other operators are not yet implemented.
+
 
 
 Procedure
@@ -85,7 +86,8 @@ will be transformed to
 After above steps, the RE should now only composed of basic operators and
 operands (in cluding parentheses).
 
-### RE to NFA transformation
+
+### Transforming RE to stack-form
 
 REs are transformed to NFA using Thompson's Construction.
 
@@ -150,10 +152,117 @@ if the current operator has
 * same precedence -- top operator of stack S to stack O, push current operator to stack O
 * lower precedence -- top operator of stack S to stack O, then compare again
 
+Using this rule, we should be able to transform the regular expression to
+stack form.
+
+
+
+### RE to NFA transformation
+
+After transforming the RE to stack form, doing the RE to NFA transformation is
+easy.
+
+Assuming all elements of RE are in stack S, and we pop out one element from
+the stack at a time. Then for each element that popped out, if it's an operand
+(character), we just create a finite automata (FA) for it (assume it's an `a`
+character):
+
+             'a'
+    Start ---------> End
+
+And push this finite automata into the stack.
+
+If it's concatenation, we pop out the last two FAs in the stack, and connect
+the front of last FA to the FA before it. Assume what we have are `a`, `b`,
+and then `CONCATENATION`, the new FA will look like:
+
+              'a'         'EPSILON'            'b'
+    Start1 --------> End1 ---------> Start2 --------> End2 (accept)
+
+Here the character `EPSILON` means empty string. In other words, we can move
+from End1 to Start2 no matter what the input character is. So to match this
+finite automata, the string should be `ab`.
+
+
+Similarly, if the operator is `ALTERNATION`, we pop out the last two FAs and
+connect them like this (Assume we have `a`, `b`,and then `ALTERNATION`):
+
+        'EPSILON'            'a'          'EPSILON'
+            +----> Start1 --------> End1 -----+
+            |                                 |
+            |                                 v
+    NewStart                                NewEnd (Accept)
+            |                                 ^
+            |                                 |
+            +----> Start2 --------> End2 -----+
+        'EPSILON'            'b'          'EPSILON'
+
+Again, `EPSILON` means we can make transition no matter what is in the input
+string, so string `a` or `b` can be matched by this FA.
+
+
+Now if the operator is `CLOSURE`, there would be a little different compared
+to the previous operators, because `CLOSURE` only needs one operand (assume
+we have `a` and `CLOSURE`):
+
+                             'EPSILON'
+                          +--------------+
+                          |              |
+            'EPSILON'     v     'a'      |   'EPSILON'
+    NewStart ------->  Start1 --------> End1 --------> NewEnd (Accept)
+          |                                              ^
+          |                                              |
+          +----------------------------------------------+
+                             'EPSILON'
+
+So according to this FA, strings that can be matched are `` (empty), `a`, `aa`
+, `aaa`, etc.
+
+But you might ask: "how do I know I have to make epsilon transition to Start1
+or NewEnd in the first step?" Oh, I really don't know, because you can only
+know it after you traverse the FA. You cannot know the 'right path' in advance
+. And that's why FAs like this are called non-deterministic finite automata
+(NFA).
+
+After all elements are transformed to NFAs like this, the result shoud be just
+one final NFA, which contains all small NFAs computed using the above method.
+
+
 
 ### NFA to DFA transformation
 
+The NFA is transformed to DFA using the following algorithm:
 
+    q0 <- epsilon-closure({n0})
+    Q <- q0
+    WorkList <- {q0}
+
+    while (WorkList is not empty) do
+        remove q from WorkList
+        for each character c in the character set do
+            t <- epsilon-closure( Delta(q, c) )
+            T[q, c] <- t
+            if t doesn't belongs to Q
+                add t to Q and WorkList
+        end
+    end
+
+The `epsilon-closure()` computes all states that can be reached by epsilon
+transitions from the given set of states.
+
+To transform the NFA to a DFA, we cannot use the original states in the NFA,
+we have to make a new FA using the information in the NFA. To do this, we 
+start with only one new state, which is a collection of `epsilon-closure()` of
+the start state. then for each different input character, we check if the path
+leads to a new set of states, we rename this set and make it a new state. But
+we have to be cautious here, because `{n0, n1, n2}` may look like `{n0, n1}`,
+but no, they are not the same set of states. We can only say the set A has
+already been named if there is a set that is already named and which has the 
+same members with this set A.
+
+Also, the set containing the start state (`n0`) is the new start state (named
+`q0` in the above algorithm), and the set containing accepting states is the 
+new accepting state.
 
 
 
@@ -182,3 +291,13 @@ states are splitted into two sets. This process keeps on until no more new
 set of states can be generated. That is, we are done when all states in the
 same set have same behavior.
 
+
+
+Other Stuff
+-----------
+
+If you are interested in the implementation details of this project, you can 
+read comments in the code, or you can read my [blog] [1] .
+
+[1]: http://edpom.tumblr.com/post/16651216995/writing-a-regular-expression-parser-1-regular
+    "Writing A Regular Expression Parser (1) - Regular Expression?"
