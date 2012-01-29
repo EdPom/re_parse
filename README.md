@@ -30,7 +30,7 @@ Usage
     >>> p = parser.Parser()
     >>> re = 'a[a-c]*'
     >>> string = 'aaaaaaa'
-    >>> print 'Position where string', string, 'is matched by re', re, ':',
+    >>> print 'String', string, 'is matched by re at', re, ':', parser.Match(string, True)
 
     Position where string aaaaaaa is matched by re a[a-c]* : 6
 
