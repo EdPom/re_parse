@@ -17,7 +17,6 @@ operators:
 * Alternation -- `|`
 * Closure -- `*`
 * One or more -- `+`
-* Zero or one -- `?`
 
 Any other operators are not yet implemented.
 
